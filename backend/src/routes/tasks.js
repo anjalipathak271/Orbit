@@ -13,14 +13,20 @@ const VALID_PRIORITIES = ["low", "medium", "high"];
 // Member from one team reading/editing another team's tasks by guessing
 // a project ID (Section 5.5 -- broken access control).
 async function getProjectMembership(userId, projectId) {
-  const result = await pool.query(
-    `SELECT wm.role
-     FROM projects p
-     JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
-     WHERE p.id = $1 AND wm.user_id = $2`,
-    [projectId, userId]
-  );
-  return result.rows[0]?.role ?? null;
+  try {
+    const result = await pool.query(
+      `SELECT wm.role
+       FROM projects p
+       JOIN workspace_members wm ON wm.workspace_id = p.workspace_id
+       WHERE p.id = $1 AND wm.user_id = $2`,
+      [projectId, userId]
+    );
+    return result.rows[0]?.role ?? null;
+  } catch (err) {
+    // e.g. projectId wasn't a valid UUID -- treat as "no access" rather
+    // than crashing.
+    return null;
+  }
 }
 
 // POST /api/projects/:projectId/tasks -- create a task.

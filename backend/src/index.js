@@ -39,3 +39,10 @@ const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Orbit backend listening on port ${PORT}`);
 });
+
+// Safety net: if any route handler throws an error we didn't catch
+// ourselves (e.g. malformed input causing a database error), log it and
+// keep the server running instead of crashing the whole process.
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled rejection (server kept running):", err.message);
+});

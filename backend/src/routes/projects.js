@@ -10,11 +10,17 @@ router.use(requireAuth);
 // Used to enforce "a Member must not access another team's data by
 // guessing an ID" -- Section 5.5.
 async function getMembership(userId, workspaceId) {
-  const result = await pool.query(
-    "SELECT role FROM workspace_members WHERE user_id = $1 AND workspace_id = $2",
-    [userId, workspaceId]
-  );
-  return result.rows[0]?.role ?? null;
+  try {
+    const result = await pool.query(
+      "SELECT role FROM workspace_members WHERE user_id = $1 AND workspace_id = $2",
+      [userId, workspaceId]
+    );
+    return result.rows[0]?.role ?? null;
+  } catch (err) {
+    // e.g. workspaceId wasn't a valid UUID -- treat as "no access" rather
+    // than crashing.
+    return null;
+  }
 }
 
 // POST /api/workspaces/:workspaceId/projects -- create a project.
