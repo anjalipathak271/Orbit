@@ -5,6 +5,7 @@ import { pool } from "./db/pool.js";
 import authRoutes from "./routes/auth.js";
 import workspaceRoutes from "./routes/workspaces.js";
 import projectRoutes from "./routes/projects.js";
+import taskRoutes from "./routes/tasks.js";
 
 const app = express();
 app.use(cors());
@@ -20,6 +21,8 @@ app.use("/api/workspaces", workspaceRoutes);
 // Project routes are nested under /workspaces/:workspaceId/projects,
 // so they're mounted on the same base path.
 app.use("/api/workspaces", projectRoutes);
+// Task routes are nested under /projects/:projectId/tasks.
+app.use("/api/projects", taskRoutes);
 
 // Confirms the server can actually talk to Postgres.
 app.get("/api/db-check", async (req, res) => {

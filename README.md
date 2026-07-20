@@ -50,6 +50,10 @@ This creates all the tables (users, workspaces, projects, tasks, comments, notif
 | POST | `/api/workspaces/:id/projects` | Yes | Create a project |
 | GET | `/api/workspaces/:id/projects` | Yes | List projects |
 | DELETE | `/api/workspaces/:id/projects/:projectId` | Yes (admin) | Delete a project |
+| POST | `/api/projects/:id/tasks` | Yes | Create a task |
+| GET | `/api/projects/:id/tasks` | Yes | List tasks (supports `?status=`, `?assignee_id=`, `?search=`) |
+| PATCH | `/api/projects/:id/tasks/:taskId` | Yes | Update a task (e.g. change status) |
+| DELETE | `/api/projects/:id/tasks/:taskId` | Yes | Delete a task |
 
 Authenticated requests need a header: `Authorization: Bearer <token>` (token comes back from register/login).
 
@@ -57,7 +61,7 @@ Authenticated requests need a header: `Authorization: Bearer <token>` (token com
 
 - [x] Week 1: Docker Compose skeleton (frontend + backend + db talking to each other)
 - [x] Week 2: Auth (register/login, password hashing, JWT), workspaces & projects CRUD with role-based access
-- [ ] Week 3: Tasks CRUD
+- [x] Week 3: Tasks CRUD (create, list with filters, update status, delete)
 - [ ] Week 4–5: Board UI, comments, real-time updates
 - [ ] Week 6: Search, algorithms, dashboard
 - [ ] Week 7: Integrations, security hardening, notifications
