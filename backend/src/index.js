@@ -2,6 +2,9 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { pool } from "./db/pool.js";
+import authRoutes from "./routes/auth.js";
+import workspaceRoutes from "./routes/workspaces.js";
+import projectRoutes from "./routes/projects.js";
 
 const app = express();
 app.use(cors());
@@ -11,6 +14,12 @@ app.use(express.json());
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok" });
 });
+
+app.use("/api/auth", authRoutes);
+app.use("/api/workspaces", workspaceRoutes);
+// Project routes are nested under /workspaces/:workspaceId/projects,
+// so they're mounted on the same base path.
+app.use("/api/workspaces", projectRoutes);
 
 // Confirms the server can actually talk to Postgres.
 app.get("/api/db-check", async (req, res) => {
