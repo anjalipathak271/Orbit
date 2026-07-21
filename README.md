@@ -62,7 +62,17 @@ Authenticated requests need a header: `Authorization: Bearer <token>` (token com
 - [x] Week 1: Docker Compose skeleton (frontend + backend + db talking to each other)
 - [x] Week 2: Auth (register/login, password hashing, JWT), workspaces & projects CRUD with role-based access
 - [x] Week 3: Tasks CRUD (create, list with filters, update status, delete)
-- [ ] Week 4–5: Board UI, comments, real-time updates
+- [x] Week 4: Real UI — login/signup screen, workspace list, project list, and a drag-and-drop task board
+- [ ] Week 5: Comments, real-time updates (WebSockets)
+
+## Using the app (Week 4+)
+
+Open http://localhost:5173 — you'll see a real login/signup screen now (not just a connection check).
+
+1. Sign up for an account
+2. Create a workspace (you become its admin)
+3. Inside the workspace, create a project
+4. Inside the project, add tasks and drag them between To Do / In Progress / Done
 - [ ] Week 6: Search, algorithms, dashboard
 - [ ] Week 7: Integrations, security hardening, notifications
 - [ ] Week 8: Deploy & documentation
