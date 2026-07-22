@@ -56,6 +56,7 @@ This creates all the tables (users, workspaces, projects, tasks, comments, notif
 | DELETE | `/api/projects/:id/tasks/:taskId` | Yes | Delete a task |
 | GET | `/api/tasks/:taskId/comments` | Yes | List comments on a task |
 | POST | `/api/tasks/:taskId/comments` | Yes | Add a comment to a task |
+| GET | `/api/workspaces/:id/dashboard` | Yes | Task stats (by status, overdue, by assignee) |
 
 Authenticated requests need a header: `Authorization: Bearer <token>` (token comes back from register/login).
 
@@ -66,6 +67,34 @@ Authenticated requests need a header: `Authorization: Bearer <token>` (token com
 - [x] Week 3: Tasks CRUD (create, list with filters, update status, delete)
 - [x] Week 4: Real UI — login/signup screen, workspace list, project list, and a drag-and-drop task board
 - [x] Week 5: Comments on tasks, real-time updates via WebSockets (Socket.IO)
+- [x] Week 6: Search/filter UI, two hand-written algorithms, and a dashboard
+
+## Algorithms (Week 6, see `backend/src/algorithms.js`)
+
+Two algorithms are implemented from scratch (no library does the core logic):
+
+1. **Relevance-ranked search** — scores each task by how many times the search
+   terms appear in its title (weighted higher) and description (weighted
+   lower), similar to the "term frequency" part of TF-IDF. Non-matching
+   tasks are dropped; the rest are sorted highest-score first.
+   Time: O(n · m · L), Space: O(n) — n = tasks, m = query words, L = text length.
+
+2. **Smart priority sort** — computes a weighted score per task from its
+   priority level, how soon (or overdue) its due date is, and whether it's
+   already done (done tasks sink to the bottom). Tasks are then sorted by
+   that score. Time: O(n log n), Space: O(n).
+
+Both are wired into `GET /api/projects/:id/tasks` via the `?search=` and
+`?sort=smart` query parameters, and exposed in the UI as the search box and
+"Smart priority sort" checkbox on the board.
+
+## Dashboard (Week 6)
+
+`GET /api/workspaces/:id/dashboard` returns tasks-per-status, an overdue
+count, and tasks-per-assignee — each computed with a query joining across
+3+ tables (`tasks` → `projects` → `workspace_members`/`users`), satisfying
+the multi-table JOIN requirement in Section 5.3. Accessible from the
+"📊 Dashboard" button on the projects screen.
 
 ## Real-time updates (Week 5)
 

@@ -13,14 +13,44 @@ export default function Board({ token, project }) {
   const [tasks, setTasks] = useState([]);
   const [status, setStatus] = useState("loading");
   const [newTitle, setNewTitle] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [smartSort, setSmartSort] = useState(false);
   const [draggedTaskId, setDraggedTaskId] = useState(null);
   const [openTask, setOpenTask] = useState(null);
   const [connected, setConnected] = useState(false);
 
+  // Reload whenever the project changes, or the status filter / smart-sort
+  // toggle changes. Search is triggered separately on form submit (see
+  // handleSearchSubmit) rather than on every keystroke.
   useEffect(() => {
     load();
-  }, [project.id]);
+  }, [project.id, statusFilter, smartSort]);
+
+  async function load(searchOverride) {
+    setStatus("loading");
+    try {
+      const data = await api.listTasks(token, project.id, {
+        status: statusFilter,
+        sort: smartSort ? "smart" : "",
+        search: searchOverride !== undefined ? searchOverride : searchInput,
+      });
+      setTasks(data);
+      setStatus("ok");
+    } catch (err) {
+      setStatus("error");
+    }
+  }
+
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+    load();
+  }
+
+  function clearSearch() {
+    setSearchInput("");
+    load("");
+  }
 
   // Real-time: connect the socket, join this project's "room", and listen
   // for events other people's actions trigger on the server. We leave the
@@ -32,15 +62,11 @@ export default function Board({ token, project }) {
       socket.emit("join_project", project.id);
       setConnected(true);
     }
-    // Join immediately if already connected, and again on every
-    // (re)connect -- covers the case where the connection drops and
-    // Socket.IO's client reconnects automatically.
     if (socket.connected) joinRoom();
     socket.on("connect", joinRoom);
     socket.on("disconnect", () => setConnected(false));
 
     function handleTaskCreated(task) {
-      // Skip if we already added this task ourselves (optimistic update).
       setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [task, ...prev]));
     }
     function handleTaskUpdated(task) {
@@ -64,17 +90,6 @@ export default function Board({ token, project }) {
       socket.disconnect();
     };
   }, [project.id]);
-
-  async function load() {
-    setStatus("loading");
-    try {
-      const data = await api.listTasks(token, project.id);
-      setTasks(data);
-      setStatus("ok");
-    } catch (err) {
-      setStatus("error");
-    }
-  }
 
   async function handleCreateTask(e) {
     e.preventDefault();
@@ -114,10 +129,6 @@ export default function Board({ token, project }) {
     }
   }
 
-  const visibleTasks = search
-    ? tasks.filter((t) => t.title.toLowerCase().includes(search.toLowerCase()))
-    : tasks;
-
   if (status === "loading") return <p className="hint">Loading tasks...</p>;
   if (status === "error") return <p className="error-banner">Could not load tasks.</p>;
 
@@ -130,12 +141,37 @@ export default function Board({ token, project }) {
             {connected ? "● Live" : "○ Connecting..."}
           </span>
         </div>
-        <input
-          className="search-input"
-          placeholder="Search tasks..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
+      </div>
+
+      <div className="toolbar">
+        <form onSubmit={handleSearchSubmit} className="search-form">
+          <input
+            className="search-input"
+            placeholder="Search tasks (ranked by relevance)..."
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+          />
+          <button type="submit" className="btn-ghost">Search</button>
+          {searchInput && (
+            <button type="button" className="btn-ghost" onClick={clearSearch}>Clear</button>
+          )}
+        </form>
+
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <option value="">All statuses</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
+
+        <label className="smart-sort-toggle">
+          <input
+            type="checkbox"
+            checked={smartSort}
+            onChange={(e) => setSmartSort(e.target.checked)}
+          />
+          Smart priority sort
+        </label>
       </div>
 
       <form onSubmit={handleCreateTask} className="inline-form">
@@ -149,7 +185,7 @@ export default function Board({ token, project }) {
 
       <div className="board">
         {COLUMNS.map((col) => {
-          const colTasks = visibleTasks.filter((t) => t.status === col.key);
+          const colTasks = tasks.filter((t) => t.status === col.key);
           return (
             <div
               key={col.key}

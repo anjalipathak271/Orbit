@@ -10,6 +10,7 @@ import workspaceRoutes from "./routes/workspaces.js";
 import projectRoutes from "./routes/projects.js";
 import taskRoutes from "./routes/tasks.js";
 import commentRoutes from "./routes/comments.js";
+import dashboardRoutes from "./routes/dashboard.js";
 
 const app = express();
 app.use(cors());
@@ -29,6 +30,8 @@ app.use("/api/workspaces", projectRoutes);
 app.use("/api/projects", taskRoutes);
 // Comment routes are nested under /tasks/:taskId/comments.
 app.use("/api/tasks", commentRoutes);
+// Dashboard route is nested under /workspaces/:workspaceId/dashboard.
+app.use("/api/workspaces", dashboardRoutes);
 
 // Confirms the server can actually talk to Postgres.
 app.get("/api/db-check", async (req, res) => {

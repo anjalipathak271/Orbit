@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
 
-export default function ProjectList({ token, workspace, onSelect }) {
+export default function ProjectList({ token, workspace, onSelect, onShowDashboard }) {
   const [projects, setProjects] = useState([]);
   const [status, setStatus] = useState("loading");
   const [newName, setNewName] = useState("");
@@ -43,8 +43,11 @@ export default function ProjectList({ token, workspace, onSelect }) {
   return (
     <div>
       <div className="section-header">
-        <h1>{workspace.name}</h1>
-        <p className="subtitle">Projects in this workspace</p>
+        <div>
+          <h1>{workspace.name}</h1>
+          <p className="subtitle">Projects in this workspace</p>
+        </div>
+        <button className="btn-ghost" onClick={onShowDashboard}>📊 Dashboard</button>
       </div>
 
       {projects.length === 0 && (

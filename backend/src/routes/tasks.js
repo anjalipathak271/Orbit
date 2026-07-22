@@ -2,6 +2,7 @@ import { Router } from "express";
 import { pool } from "../db/pool.js";
 import { requireAuth } from "../middleware/auth.js";
 import { emitToProject } from "../realtime.js";
+import { rankTasksBySearch, sortTasksBySmartPriority } from "../algorithms.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -62,14 +63,18 @@ router.post("/:projectId/tasks", async (req, res) => {
 });
 
 // GET /api/projects/:projectId/tasks -- list tasks, with optional filters.
-// Supports ?status=, ?assignee_id=, ?search= (keyword in title/description).
+// Supports ?status=, ?assignee_id=, ?search= (custom relevance ranking --
+// see algorithms.js), and ?sort=smart (custom weighted priority ordering).
 router.get("/:projectId/tasks", async (req, res) => {
   const { projectId } = req.params;
-  const { status, assignee_id, search } = req.query;
+  const { status, assignee_id, search, sort } = req.query;
 
   const role = await getProjectMembership(req.user.id, projectId);
   if (!role) return res.status(403).json({ error: "You do not have access to this project" });
 
+  // SQL only narrows down by project/status/assignee -- the actual search
+  // ranking and "smart" ordering are our own algorithms (Section 5.7),
+  // applied in JavaScript after fetching the candidate rows.
   const conditions = ["project_id = $1"];
   const values = [projectId];
 
@@ -81,17 +86,23 @@ router.get("/:projectId/tasks", async (req, res) => {
     values.push(assignee_id);
     conditions.push(`assignee_id = $${values.length}`);
   }
-  if (search) {
-    values.push(`%${search}%`);
-    conditions.push(`(title ILIKE $${values.length} OR description ILIKE $${values.length})`);
-  }
 
   try {
     const result = await pool.query(
       `SELECT * FROM tasks WHERE ${conditions.join(" AND ")} ORDER BY created_at DESC`,
       values
     );
-    res.json(result.rows);
+
+    let tasks = result.rows;
+
+    if (search) {
+      tasks = rankTasksBySearch(tasks, search);
+    }
+    if (sort === "smart") {
+      tasks = sortTasksBySmartPriority(tasks);
+    }
+
+    res.json(tasks);
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Could not fetch tasks" });

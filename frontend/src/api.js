@@ -44,7 +44,12 @@ export const api = {
       token,
     }),
 
-  listTasks: (token, projectId) => request(`/api/projects/${projectId}/tasks`, { token }),
+  listTasks: (token, projectId, params = {}) => {
+    const query = new URLSearchParams(
+      Object.fromEntries(Object.entries(params).filter(([, v]) => v))
+    ).toString();
+    return request(`/api/projects/${projectId}/tasks${query ? `?${query}` : ""}`, { token });
+  },
 
   createTask: (token, projectId, title) =>
     request(`/api/projects/${projectId}/tasks`, {
@@ -67,4 +72,7 @@ export const api = {
 
   createComment: (token, taskId, body) =>
     request(`/api/tasks/${taskId}/comments`, { method: "POST", body: { body }, token }),
+
+  getDashboard: (token, workspaceId) =>
+    request(`/api/workspaces/${workspaceId}/dashboard`, { token }),
 };
