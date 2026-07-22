@@ -54,6 +54,8 @@ This creates all the tables (users, workspaces, projects, tasks, comments, notif
 | GET | `/api/projects/:id/tasks` | Yes | List tasks (supports `?status=`, `?assignee_id=`, `?search=`) |
 | PATCH | `/api/projects/:id/tasks/:taskId` | Yes | Update a task (e.g. change status) |
 | DELETE | `/api/projects/:id/tasks/:taskId` | Yes | Delete a task |
+| GET | `/api/tasks/:taskId/comments` | Yes | List comments on a task |
+| POST | `/api/tasks/:taskId/comments` | Yes | Add a comment to a task |
 
 Authenticated requests need a header: `Authorization: Bearer <token>` (token comes back from register/login).
 
@@ -63,7 +65,16 @@ Authenticated requests need a header: `Authorization: Bearer <token>` (token com
 - [x] Week 2: Auth (register/login, password hashing, JWT), workspaces & projects CRUD with role-based access
 - [x] Week 3: Tasks CRUD (create, list with filters, update status, delete)
 - [x] Week 4: Real UI — login/signup screen, workspace list, project list, and a drag-and-drop task board
-- [ ] Week 5: Comments, real-time updates (WebSockets)
+- [x] Week 5: Comments on tasks, real-time updates via WebSockets (Socket.IO)
+
+## Real-time updates (Week 5)
+
+The board connects to the backend over WebSockets and joins a room scoped to
+the project being viewed (`project:<id>`). When any task is created, moved,
+or deleted, or a comment is added, the server broadcasts an event to
+everyone in that room — so if you open the same project in two browser
+tabs (or two people are viewing it), changes appear instantly without a
+refresh. The "● Live" indicator on the board shows the connection status.
 
 ## Using the app (Week 4+)
 
@@ -73,6 +84,7 @@ Open http://localhost:5173 — you'll see a real login/signup screen now (not ju
 2. Create a workspace (you become its admin)
 3. Inside the workspace, create a project
 4. Inside the project, add tasks and drag them between To Do / In Progress / Done
+5. Click the 💬 icon on a task to view/add comments
 - [ ] Week 6: Search, algorithms, dashboard
 - [ ] Week 7: Integrations, security hardening, notifications
 - [ ] Week 8: Deploy & documentation

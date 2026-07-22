@@ -310,3 +310,79 @@ input:focus {
 .priority-low { background: #e6f2e9; color: #2f7a4a; }
 .priority-medium { background: #fdf1de; color: var(--accent-dark); }
 .priority-high { background: #fdeaea; color: var(--danger); }
+
+.task-actions { display: flex; gap: 0.2rem; }
+
+.live-indicator {
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: block;
+  margin-top: 0.2rem;
+}
+.live-on { color: #2f7a4a; }
+.live-off { color: var(--muted); }
+
+/* ---------- Task modal (comments) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 50;
+}
+
+.modal-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem 1.2rem;
+  border-bottom: 1px solid var(--border);
+}
+.modal-header h2 { margin: 0; font-size: 1.1rem; }
+
+.comments-list {
+  padding: 1rem 1.2rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.comment {
+  background: var(--paper);
+  border-radius: 8px;
+  padding: 0.6rem 0.8rem;
+}
+
+.comment-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-bottom: 0.2rem;
+}
+
+.comment-body { font-size: 0.9rem; }
+
+.comment-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.2rem;
+  border-top: 1px solid var(--border);
+}
+.comment-form input { flex: 1; }

@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { pool } from "../db/pool.js";
 import { requireAuth } from "../middleware/auth.js";
+import { emitToProject } from "../realtime.js";
 
 const router = Router();
 router.use(requireAuth);
@@ -52,6 +53,7 @@ router.post("/:projectId/tasks", async (req, res) => {
        RETURNING *`,
       [projectId, title, description ?? null, status, priority, assignee_id ?? null, due_date ?? null]
     );
+    emitToProject(projectId, "task_created", result.rows[0]);
     res.status(201).json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -129,6 +131,7 @@ router.patch("/:projectId/tasks/:taskId", async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Task not found in this project" });
     }
+    emitToProject(projectId, "task_updated", result.rows[0]);
     res.json(result.rows[0]);
   } catch (err) {
     console.error(err);
@@ -151,6 +154,7 @@ router.delete("/:projectId/tasks/:taskId", async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ error: "Task not found in this project" });
     }
+    emitToProject(projectId, "task_deleted", { id: taskId });
     res.json({ message: "Task deleted" });
   } catch (err) {
     console.error(err);

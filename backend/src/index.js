@@ -1,11 +1,15 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import { createServer } from "http";
+import { Server } from "socket.io";
 import { pool } from "./db/pool.js";
+import { setIO } from "./realtime.js";
 import authRoutes from "./routes/auth.js";
 import workspaceRoutes from "./routes/workspaces.js";
 import projectRoutes from "./routes/projects.js";
 import taskRoutes from "./routes/tasks.js";
+import commentRoutes from "./routes/comments.js";
 
 const app = express();
 app.use(cors());
@@ -23,6 +27,8 @@ app.use("/api/workspaces", workspaceRoutes);
 app.use("/api/workspaces", projectRoutes);
 // Task routes are nested under /projects/:projectId/tasks.
 app.use("/api/projects", taskRoutes);
+// Comment routes are nested under /tasks/:taskId/comments.
+app.use("/api/tasks", commentRoutes);
 
 // Confirms the server can actually talk to Postgres.
 app.get("/api/db-check", async (req, res) => {
@@ -35,8 +41,33 @@ app.get("/api/db-check", async (req, res) => {
   }
 });
 
+// Socket.IO runs on top of the same HTTP server as the REST API --
+// no separate port needed. Clients "join" a room per project (e.g.
+// "project:<uuid>"), so updates only broadcast to people viewing that
+// specific board, not every connected client.
+const httpServer = createServer(app);
+const io = new Server(httpServer, {
+  cors: { origin: "*" },
+});
+setIO(io);
+
+io.on("connection", (socket) => {
+  socket.on("join_project", (projectId) => {
+    socket.join(`project:${projectId}`);
+  });
+
+  socket.on("leave_project", (projectId) => {
+    socket.leave(`project:${projectId}`);
+  });
+
+  // Socket.IO's client library already handles reconnection (retrying
+  // with backoff) automatically -- nothing extra needed here. The
+  // frontend just re-emits "join_project" on every "connect" event,
+  // including reconnects, so the client ends up back in the right room.
+});
+
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Orbit backend listening on port ${PORT}`);
 });
 

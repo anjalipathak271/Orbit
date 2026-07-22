@@ -62,4 +62,9 @@ export const api = {
 
   deleteTask: (token, projectId, taskId) =>
     request(`/api/projects/${projectId}/tasks/${taskId}`, { method: "DELETE", token }),
+
+  listComments: (token, taskId) => request(`/api/tasks/${taskId}/comments`, { token }),
+
+  createComment: (token, taskId, body) =>
+    request(`/api/tasks/${taskId}/comments`, { method: "POST", body: { body }, token }),
 };

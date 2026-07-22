@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../api";
+import { socket } from "../socket";
+import TaskModal from "./TaskModal";
 
 const COLUMNS = [
   { key: "todo", label: "To Do" },
@@ -13,9 +15,54 @@ export default function Board({ token, project }) {
   const [newTitle, setNewTitle] = useState("");
   const [search, setSearch] = useState("");
   const [draggedTaskId, setDraggedTaskId] = useState(null);
+  const [openTask, setOpenTask] = useState(null);
+  const [connected, setConnected] = useState(false);
 
   useEffect(() => {
     load();
+  }, [project.id]);
+
+  // Real-time: connect the socket, join this project's "room", and listen
+  // for events other people's actions trigger on the server. We leave the
+  // room and disconnect when navigating away or switching projects.
+  useEffect(() => {
+    socket.connect();
+
+    function joinRoom() {
+      socket.emit("join_project", project.id);
+      setConnected(true);
+    }
+    // Join immediately if already connected, and again on every
+    // (re)connect -- covers the case where the connection drops and
+    // Socket.IO's client reconnects automatically.
+    if (socket.connected) joinRoom();
+    socket.on("connect", joinRoom);
+    socket.on("disconnect", () => setConnected(false));
+
+    function handleTaskCreated(task) {
+      // Skip if we already added this task ourselves (optimistic update).
+      setTasks((prev) => (prev.some((t) => t.id === task.id) ? prev : [task, ...prev]));
+    }
+    function handleTaskUpdated(task) {
+      setTasks((prev) => prev.map((t) => (t.id === task.id ? task : t)));
+    }
+    function handleTaskDeleted({ id }) {
+      setTasks((prev) => prev.filter((t) => t.id !== id));
+    }
+
+    socket.on("task_created", handleTaskCreated);
+    socket.on("task_updated", handleTaskUpdated);
+    socket.on("task_deleted", handleTaskDeleted);
+
+    return () => {
+      socket.emit("leave_project", project.id);
+      socket.off("connect", joinRoom);
+      socket.off("disconnect");
+      socket.off("task_created", handleTaskCreated);
+      socket.off("task_updated", handleTaskUpdated);
+      socket.off("task_deleted", handleTaskDeleted);
+      socket.disconnect();
+    };
   }, [project.id]);
 
   async function load() {
@@ -77,7 +124,12 @@ export default function Board({ token, project }) {
   return (
     <div>
       <div className="section-header">
-        <h1>{project.name}</h1>
+        <div>
+          <h1>{project.name}</h1>
+          <span className={`live-indicator ${connected ? "live-on" : "live-off"}`}>
+            {connected ? "● Live" : "○ Connecting..."}
+          </span>
+        </div>
         <input
           className="search-input"
           placeholder="Search tasks..."
@@ -129,13 +181,22 @@ export default function Board({ token, project }) {
                     <span className={`priority-badge priority-${task.priority}`}>
                       {task.priority}
                     </span>
-                    <button
-                      className="btn-icon"
-                      onClick={() => handleDelete(task.id)}
-                      title="Delete task"
-                    >
-                      ✕
-                    </button>
+                    <div className="task-actions">
+                      <button
+                        className="btn-icon"
+                        onClick={() => setOpenTask(task)}
+                        title="Comments"
+                      >
+                        💬
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => handleDelete(task.id)}
+                        title="Delete task"
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -143,6 +204,10 @@ export default function Board({ token, project }) {
           );
         })}
       </div>
+
+      {openTask && (
+        <TaskModal token={token} task={openTask} onClose={() => setOpenTask(null)} />
+      )}
     </div>
   );
 }
